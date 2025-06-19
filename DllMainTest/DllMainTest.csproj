@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+
+		<PublishAot>true</PublishAot>
+		<RuntimeIdentifier>win-x86</RuntimeIdentifier>
+		<SelfContained>true</SelfContained>
+		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+	</PropertyGroup>
+
+
+	<Target Name="ExcludeNoOpMain" DependsOnTargets="SetupOSSpecificProps" BeforeTargets="LinkNative">
+		<ItemGroup>
+			<!-- Extracting already included LIB/OBJ references, injecting our own DllMain instead of the no-op one, stiching everything back. -->
+			<LinkerArg Remove="/DLL" />
+			<LinkerArg Remove="@(NativeLibrary->'&quot;%(Identity)&quot;')" />
+			<LinkerArg Remove="@(SdkNativeLibrary->'&quot;%(Identity)&quot;')" />
+
+			<NativeLibrary Remove="$(IlcSdkPath)dllmain$(ObjectSuffix)" />
+			<NativeLibrary Include="$(DllMainPath)\dllmain.lib" />
+
+			<LinkerArg Include="/DLL" />
+			<LinkerArg Include="@(NativeLibrary->'&quot;%(Identity)&quot;')" />
+			<LinkerArg Include="@(SdkNativeLibrary->'&quot;%(Identity)&quot;')" />
+
+			<!-- If we don't force-include it, the linker will trim it, and _DllMainCRTStartup(x,x,x) will link to a `return 1` shim. -->
+			<LinkerArg Include="/INCLUDE:_DllMain@12" />
+		</ItemGroup>
+	</Target>
+</Project>
